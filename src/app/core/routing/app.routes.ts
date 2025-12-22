@@ -37,18 +37,7 @@ export const routes: Routes = [
     ],
   },
 
-  // IAM ADMIN (no se muestra en UI pública)
-  {
-    path: 'admin/auth',
-    children: [
-      {
-        path: 'login',
-        loadComponent: () =>
-          import('../../contexts/iam/presentation/pages/admin-login/admin-login.component')
-            .then(m => m.AdminLoginComponent),
-      },
-    ],
-  },
+
 
   // Admin App (protegido)
   {

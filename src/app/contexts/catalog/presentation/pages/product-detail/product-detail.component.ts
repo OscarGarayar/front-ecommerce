@@ -152,7 +152,7 @@ interface GalleryItem {
                 <div *ngIf="errorMessage" class="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-100 flex items-center gap-2 animate-fade-in">
                   <span>⚠️</span>
                   <span class="font-medium">{{ errorMessage }}</span>
-                  <span class="text-xs opacity-75">(Prueba otro color)</span>
+                  <span class="text-xs opacity-75">(Prueba otro color o talla)</span>
                 </div>
               </div>
 
@@ -313,7 +313,7 @@ export class ProductDetailComponent implements OnInit {
       if (targetSize && targetColor) {
         this.selectedVariant = null;
         this.currentStock = 0;
-        this.errorMessage = 'Combinación no disponible';
+        this.errorMessage = 'No Stock';
       }
     }
   }

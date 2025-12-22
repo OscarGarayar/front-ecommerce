@@ -54,6 +54,21 @@ export const CatalogMapper = {
 
   // 4. Mapeo desde Cards (Listado)
   toDomainProductFromCard(dto: ProductCardDto): Product {
+    // Intentamos mapear todas las imágenes si vienen en el DTO, si no, usamos la primaria
+    let images: any[] = [];
+
+    // SI TU DTO TIENE UN CAMPO 'images' (array), úsalo:
+    if ((dto as any).images && Array.isArray((dto as any).images)) {
+      images = (dto as any).images.map((img: any) => ({
+        url: img.url,
+        type: img.type
+      }));
+    }
+    // Si no, fallback a la primaria
+    else if (dto.primaryImageUrl) {
+      images = [{ url: dto.primaryImageUrl, type: 'PRIMARY' }];
+    }
+
     return {
       id: dto.id,
       name: dto.name,
@@ -61,7 +76,7 @@ export const CatalogMapper = {
       status: 'PUBLISHED',
       category: 'General',
       price: dto.minimumPrice,
-      images: dto.primaryImageUrl ? [{ url: dto.primaryImageUrl, type: 'PRIMARY' }] : [],
+      images: images, // <--- Pasamos el array completo
       variants: []
     };
   }
