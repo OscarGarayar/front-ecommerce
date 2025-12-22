@@ -114,7 +114,57 @@ export class HttpCatalogAdminRepository {
       {}
     );
   }
+  // ===== NUEVO: INVENTORY (Stocks) =====
+  //
+  getInventory(variantId: number) {
+    return this.http.get<any>(`${this.baseUrl}/api/v1/inventory/items/${variantId}`);
+  }
+
+  //
+  increaseStock(variantId: number, quantity: number) {
+    return this.http.post<any>(
+      `${this.baseUrl}/api/v1/inventory/items/${variantId}/increase`,
+      { quantity }
+    );
+  }
+
+  //
+  decreaseStock(variantId: number, quantity: number) {
+    return this.http.post<any>(
+      `${this.baseUrl}/api/v1/inventory/items/${variantId}/decrease`,
+      { quantity }
+    );
+  }
+
+  // ===== NUEVO: PRICING (Activation) =====
+  //
+  getPrice(variantId: number) {
+    return this.http.get<any>(`${this.baseUrl}/api/v1/pricing/prices/${variantId}`);
+  }
+  updatePrice(variantId: number, newPrice: number) {
+    return this.http.put<void>(
+      `${this.baseUrl}/api/v1/pricing/prices/${variantId}`,
+      { newPrice } // Body coincide con tu imagen: { "newPrice": 0 }
+    );
+  }
+
+  //
+  activatePrice(variantId: number) {
+    return this.http.patch<void>(
+      `${this.baseUrl}/api/v1/pricing/prices/${variantId}/activate`,
+      {}
+    );
+  }
+
+  //
+  deactivatePrice(variantId: number) {
+    return this.http.patch<void>(
+      `${this.baseUrl}/api/v1/pricing/prices/${variantId}/deactivate`,
+      {}
+    );
+  }
 }
+
 
 // Export para imports convenientes
 export type { CategoryDto, PageDto, ProductDto };
