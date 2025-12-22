@@ -208,7 +208,7 @@ type ProductVm = {
 
             <button class="border rounded px-3 py-2"
                     (click)="addVariantImage(v.id)"
-                    [disabled]="busy || !(variantImageUrlByVariantId[v.id] ?? '').trim()">
+                    [disabled]="busy || !(variantImageUrlByVariantId[v.id] || '').trim()">
               Add variant image
             </button>
 

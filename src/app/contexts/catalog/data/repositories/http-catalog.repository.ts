@@ -10,6 +10,7 @@ import { ProductDto } from '../dto/product.dto';
 import { CategoryDto } from '../dto/category.dto';
 import { OfferDto } from '../dto/offer.dto';
 import { CatalogMapper } from '../mappers/catalog.mapper';
+import {ProductCardDto} from "../dto/product-card";
 
 @Injectable({ providedIn: 'root' })
 export class HttpCatalogRepository extends CatalogRepository {
@@ -24,7 +25,18 @@ export class HttpCatalogRepository extends CatalogRepository {
     );
   }
 
+  getProductCards(page: number, size: number): Observable<Product[]> {
+    // Apunta al nuevo endpoint del controlador 'product-listing-controller'
+    const url = `${this.baseUrl}/api/v1/catalog/products/cards?page=${page}&size=${size}&sortBy=id`;
 
+    return this.http.get<any>(url).pipe(
+      map((res) => {
+        // Aseguramos que 'content' exista como en tu imagen
+        const items = res.content || [];
+        return items.map((item: ProductCardDto) => CatalogMapper.toDomainProductFromCard(item));
+      })
+    );
+  }
 
 
   getProductById(id: string | number): Observable<Product> {

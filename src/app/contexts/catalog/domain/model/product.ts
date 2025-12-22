@@ -1,23 +1,25 @@
-export interface ProductImage {
+export interface Product {
   id: number;
+  name: string;
+  description?: string | null;
+  status?: string;
+  category?: string;
+  price?: number; // <--- Nuevo campo para el precio base
+  images: ProductImage[];
+  variants: ProductVariant[];
+}
+
+// Interfaces auxiliares (se mantienen igual o se ajustan)
+export interface ProductImage {
+  id?: number;
   url: string;
-  type?: 'PRIMARY' | string;
+  type?: string;
 }
 
 export interface ProductVariant {
   id: number;
   sku: string;
   status: string;
+  attributes?: Record<string, string>; // Para guardar { "Talla": "M", "Color": "Rojo" }
   images?: ProductImage[];
-  // Nota: El backend NO está enviando precio en la variante según las fotos
-}
-
-export interface Product {
-  id: number;
-  name: string;
-  description?: string | null;
-  status?: string;
-  category?: string; // Swagger muestra que llega como string ("test")
-  images: ProductImage[];
-  variants: ProductVariant[];
 }

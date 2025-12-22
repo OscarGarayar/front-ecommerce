@@ -11,6 +11,12 @@ export const routes: Routes = [
       import('../../contexts/catalog/presentation/pages/shop-home/shop-home.component')
         .then(m => m.ShopHomeComponent),
   },
+  {
+    path: 'shop/product/:id',
+    loadComponent: () =>
+      import('../../contexts/catalog/presentation/pages/product-detail/product-detail.component')
+        .then(m => m.ProductDetailComponent),
+  },
 
   // IAM CLIENTE (público)
   {

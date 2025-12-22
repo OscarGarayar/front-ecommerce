@@ -4,6 +4,7 @@ import { OfferDto } from '../dto/offer.dto';
 import { Product } from '../../domain/model/product';
 import { Category } from '../../domain/model/category';
 import { Offer } from '../../domain/model/offer';
+import {ProductCardDto} from "../dto/product-card";
 
 export const CatalogMapper = {
   // 1. Lógica corregida para PRODUCTOS (la que arreglamos para el Swagger)
@@ -45,4 +46,16 @@ export const CatalogMapper = {
   toDomainOffer(dto: OfferDto): Offer {
     return { ...dto };
   },
+  toDomainProductFromCard(dto: ProductCardDto): Product {
+    return {
+      id: dto.id,
+      name: dto.name,
+      description: dto.description ?? '',
+      status: 'PUBLISHED',
+      category: 'General', // El endpoint cards no trae categoría aun
+      price: dto.minimumPrice, // ¡Aquí está el precio!
+      images: dto.primaryImageUrl ? [{ url: dto.primaryImageUrl, type: 'PRIMARY' }] : [],
+      variants: [] // La carta no trae variantes, eso es en el detalle
+    };
+  }
 };

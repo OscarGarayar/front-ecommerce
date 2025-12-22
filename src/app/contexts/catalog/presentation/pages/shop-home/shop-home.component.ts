@@ -3,11 +3,12 @@ import { AsyncPipe, NgFor, NgIf, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms'; // Necesario para [(ngModel)]
 import { HttpCatalogRepository } from '../../../data/repositories/http-catalog.repository';
 import { Product } from '../../../domain/model/product';
+import {RouterLink} from "@angular/router";
 
 @Component({
   selector: 'app-shop-home',
   standalone: true,
-  imports: [NgIf, NgFor, AsyncPipe, FormsModule, NgClass],
+  imports: [NgIf, NgFor, AsyncPipe, FormsModule, NgClass, RouterLink],
   template: `
     <div class="min-h-screen bg-gray-50 font-sans flex flex-col">
 
@@ -104,6 +105,7 @@ import { Product } from '../../../domain/model/product';
                 </div>
               </div>
 
+
               <div class="p-5 flex-1 flex flex-col">
                 <p class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">
                   {{ p.category }}
@@ -117,13 +119,15 @@ import { Product } from '../../../domain/model/product';
                 </p>
 
                 <div class="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <span class="text-sm text-gray-500 italic">
-                    {{ p.variants.length > 0 ? 'Ver opciones' : 'Agotado' }}
-                  </span>
-
-                  <button class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center">
+                  <div class="flex flex-col">
+                    <span class="text-xs text-gray-400">Precio</span>
+                    <span class="text-xl font-bold text-gray-900">
+                       {{ p.price ? ('S/ ' + p.price) : 'Consultar' }}
+                     </span>
+                  </div>
+                  <a [routerLink]="['/shop/product', p.id]" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center cursor-pointer">
                     Ver Detalle <span class="ml-1">→</span>
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>
@@ -151,16 +155,15 @@ export class ShopHomeComponent implements OnInit {
 
   loadData() {
     this.loading = true;
-    this.catalog.getProductsPage(0, 50).subscribe({
+    // USAMOS EL NUEVO MÉTODO DEL REPOSITORIO
+    this.catalog.getProductCards(0, 50).subscribe({
       next: (data) => {
         this.rawProducts = data;
-        this.extractCategories();
+        // Nota: extractCategories() no funcionará bien si el endpoint no trae categorías,
+        // pero el precio sí se verá.
         this.loading = false;
       },
-      error: (err) => {
-        console.error(err);
-        this.loading = false;
-      }
+      error: (err) => { console.error(err); this.loading = false; }
     });
   }
 
