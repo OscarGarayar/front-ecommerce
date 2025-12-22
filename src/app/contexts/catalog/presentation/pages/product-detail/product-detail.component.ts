@@ -8,16 +8,17 @@ import { AppConfig } from '../../../../../core/config/app-config';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
-// Interfaz auxiliar para la galería
-interface GalleryItem {
-  url: string;
-  isVariant: boolean;
-}
+// Nuevos Imports para Auth
+import { SessionStore } from '../../../../../core/state/session.store';
+import {AuthModalComponent, AuthMode} from "../../../../iam/presentation/components/auth-modal/auth-modal.component";
+import {HttpAuthRepository} from "../../../../iam/data/repositories/http-auth.repository";
+
+interface GalleryItem { url: string; isVariant: boolean; }
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AuthModalComponent], // Importar el Modal
   template: `
     <div class="min-h-screen bg-white font-sans flex flex-col">
 
@@ -27,8 +28,38 @@ interface GalleryItem {
             <span class="text-xl group-hover:-translate-x-1 transition-transform">←</span>
             <span class="text-sm font-medium">Volver a la tienda</span>
           </a>
+
           <div class="text-xl font-bold text-gray-900 tracking-tight">Bambinos Store</div>
-          <div class="w-20"></div>
+
+          <div class="flex items-center gap-4 text-sm w-auto justify-end">
+
+             <ng-container *ngIf="!(session.state$ | async)?.token">
+                <button (click)="openAuthModal('LOGIN')" class="text-gray-500 hover:text-indigo-600 font-medium transition-colors">
+                  Iniciar Sesión
+                </button>
+                <button (click)="openAuthModal('SIGNUP')" class="px-4 py-2 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-transform hover:scale-105 shadow-sm font-medium">
+                  Registrarse
+                </button>
+             </ng-container>
+
+             <ng-container *ngIf="(session.state$ | async) as state">
+               <div *ngIf="state.token" class="flex items-center gap-3">
+
+                  <a *ngIf="state.role === 'ROLE_ADMIN'"
+                     href="/admin"
+                     class="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors font-bold text-xs uppercase tracking-wide">
+                     <span>⚙️</span> Panel Admin
+                  </a>
+
+                  <span class="text-gray-600 hidden sm:block">Hola, Cliente</span>
+
+                  <button (click)="logout()" class="text-red-500 hover:text-red-700 text-xs border border-red-200 px-3 py-1 rounded-full hover:bg-red-50 transition-colors">
+                    Salir
+                  </button>
+               </div>
+             </ng-container>
+
+          </div>
         </nav>
       </header>
 
@@ -43,7 +74,6 @@ interface GalleryItem {
         <div class="lg:grid lg:grid-cols-2 lg:gap-x-12 lg:items-start">
 
           <div class="flex flex-col-reverse lg:flex-row gap-4 sticky top-24">
-
             <div class="flex lg:flex-col gap-3 overflow-x-auto lg:overflow-y-auto lg:w-24 lg:h-[600px] py-1 px-1 no-scrollbar scroll-smooth">
               <button *ngFor="let img of galleryImages"
                       (click)="selectedImage = img.url"
@@ -55,7 +85,6 @@ interface GalleryItem {
                 <span *ngIf="img.isVariant" class="absolute bottom-0 right-0 w-2 h-2 bg-indigo-500 rounded-tl-md"></span>
               </button>
             </div>
-
             <div class="relative w-full aspect-[4/5] lg:h-[600px] bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-sm group">
               <img [src]="selectedImage || 'assets/placeholder.png'"
                    class="w-full h-full object-contain object-center mix-blend-multiply transition-transform duration-500 group-hover:scale-105">
@@ -63,7 +92,6 @@ interface GalleryItem {
           </div>
 
           <div class="mt-10 px-4 sm:px-0 sm:mt-16 lg:mt-0">
-
             <div class="mb-6 border-b border-gray-100 pb-6">
               <h2 class="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-2">{{ product.category }}</h2>
               <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight leading-tight mb-3">{{ product.name }}</h1>
@@ -82,7 +110,6 @@ interface GalleryItem {
             <div class="prose prose-sm text-gray-600 mb-8 leading-relaxed" [innerHTML]="product.description"></div>
 
             <div class="space-y-8">
-
               <div *ngIf="uniqueSizes.length > 0">
                 <div class="flex justify-between items-center mb-3">
                   <h3 class="text-sm font-bold text-gray-900">Talla</h3>
@@ -120,14 +147,12 @@ interface GalleryItem {
                           class="relative h-12 w-12 rounded-full border border-gray-200 shadow-sm focus:outline-none transition-transform hover:scale-110 active:scale-95 flex items-center justify-center group/color"
                           [style.background-color]="getColorHex(color)"
                           [title]="color">
-
                     <svg *ngIf="selectedAttributes['Color'] === color"
                          [class.text-white]="isDarkColor(color)"
                          [class.text-gray-900]="!isDarkColor(color)"
                          class="h-6 w-6 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-
                     <div *ngIf="!isColorAvailable(color)" class="absolute inset-0 flex items-center justify-center">
                       <div class="h-0.5 w-full bg-gray-400 rotate-45"></div>
                     </div>
@@ -162,14 +187,15 @@ interface GalleryItem {
                         class="w-full bg-gray-900 border border-transparent rounded-full py-5 px-8 flex items-center justify-center text-lg font-bold text-white hover:bg-black hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed transition-all transform active:scale-[0.99]">
                   {{ getButtonText() }}
                 </button>
-
-
               </div>
 
             </div>
           </div>
         </div>
       </div>
+
+      <app-auth-modal [(isOpen)]="showAuthModal" [initialMode]="authMode"></app-auth-modal>
+
     </div>
   `,
   styles: [`
@@ -183,26 +209,27 @@ export class ProductDetailComponent implements OnInit {
   product: Product | null = null;
   loading = true;
 
+  // AUTH STATE
+  showAuthModal = false;
+  authMode: AuthMode = 'LOGIN';
+
   selectedImage: string | null = null;
   galleryImages: GalleryItem[] = [];
-
-  // Selección
   selectedAttributes: { Size?: string; Color?: string } = {};
   selectedVariant: ProductVariant | null = null;
-
-  // Estado Dinámico
   currentPrice: number = 0;
   currentStock: number = 0;
   checkingStock = false;
   errorMessage = '';
-
   uniqueSizes: string[] = [];
   uniqueColors: string[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private catalog: HttpCatalogRepository,
-    private http: HttpClient
+    private http: HttpClient,
+    private authRepo: HttpAuthRepository,
+    public session: SessionStore
   ) {}
 
   ngOnInit() {
@@ -210,6 +237,17 @@ export class ProductDetailComponent implements OnInit {
     if (id) this.loadProduct(id);
   }
 
+  // --- MÉTODOS AUTH ---
+  openAuthModal(mode: AuthMode) {
+    this.authMode = mode;
+    this.showAuthModal = true;
+  }
+
+  logout() {
+    this.authRepo.logout();
+  }
+
+  // --- MÉTODOS CATALOG (Tu lógica original intacta) ---
   loadProduct(id: string) {
     this.loading = true;
     this.catalog.getProductById(id).subscribe({
@@ -217,7 +255,6 @@ export class ProductDetailComponent implements OnInit {
         this.product = p;
         this.buildGallery(p);
         this.extractAttributes(p);
-
         if (p.variants && p.variants.length > 0) {
           this.autoSelectVariant(p.variants[0]);
         } else {
@@ -249,7 +286,6 @@ export class ProductDetailComponent implements OnInit {
   extractAttributes(p: Product) {
     const sizes = new Set<string>();
     const colors = new Set<string>();
-
     if (p.variants) {
       p.variants.forEach(v => {
         const attrs: any = v.attributes || {};
@@ -259,7 +295,6 @@ export class ProductDetailComponent implements OnInit {
         if (colorVal) colors.add(colorVal);
       });
     }
-
     const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'U'];
     this.uniqueSizes = Array.from(sizes).sort((a, b) => {
       const idxA = sizeOrder.indexOf(a);
@@ -286,10 +321,8 @@ export class ProductDetailComponent implements OnInit {
     if (!this.product) return;
     const targetSize = this.selectedAttributes['Size'];
     const targetColor = this.selectedAttributes['Color'];
-
     if (!targetSize && !targetColor) return;
 
-    // Buscar variante exacta
     const variant = this.product.variants.find(v => {
       const attrs: any = v.attributes || {};
       const sVal = attrs['Size'] || attrs['size'] || attrs['Talla'];
@@ -298,18 +331,14 @@ export class ProductDetailComponent implements OnInit {
     });
 
     if (variant) {
-      // Éxito: combinación existe
       this.selectedVariant = variant;
       this.errorMessage = '';
       this.fetchVariantLiveData(variant.id);
-
-      // Actualizar imagen si la variante tiene una específica
       if (variant.images && variant.images.length > 0) {
         const variantImg = typeof variant.images[0] === 'string' ? variant.images[0] : (variant.images[0] as any).url;
         if (variantImg) this.selectedImage = variantImg;
       }
     } else {
-      // Fallo: combinación no existe (pero mantenemos selección visual)
       if (targetSize && targetColor) {
         this.selectedVariant = null;
         this.currentStock = 0;
@@ -337,7 +366,6 @@ export class ProductDetailComponent implements OnInit {
     });
   }
 
-  // SOLO validamos disponibilidad para colores
   isColorAvailable(color: string): boolean {
     if (!this.selectedAttributes['Size']) return true;
     return this.product?.variants.some(v => {
@@ -348,22 +376,14 @@ export class ProductDetailComponent implements OnInit {
     }) ?? false;
   }
 
-  // Tallas siempre disponibles (no blocked)
-  isSizeAvailable(size: string): boolean {
-    return true;
-  }
+  isSizeAvailable(size: string): boolean { return true; }
 
   get canAddToCart(): boolean { return !!this.selectedVariant && !this.checkingStock && this.currentStock > 0; }
 
   getButtonText(): string {
     if (this.uniqueSizes.length > 0 && !this.selectedAttributes['Size']) return 'Elige Talla';
     if (this.uniqueColors.length > 0 && !this.selectedAttributes['Color']) return 'Elige Color';
-
-    // Si llegamos aquí con todo seleccionado pero sin variante, es el caso de "No disponible"
-    if (this.selectedAttributes['Size'] && this.selectedAttributes['Color'] && !this.selectedVariant) {
-      return 'No disponible';
-    }
-
+    if (this.selectedAttributes['Size'] && this.selectedAttributes['Color'] && !this.selectedVariant) return 'No disponible';
     if (!this.selectedVariant) return 'No disponible';
     if (this.checkingStock) return 'Verificando...';
     if (this.currentStock <= 0) return 'Agotado';

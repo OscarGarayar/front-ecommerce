@@ -6,7 +6,7 @@ import { Product } from '../../../domain/model/product';
 
 import { ProductCardComponent } from '../../components/product-card/product-card.component';
 import { ShopSidebarComponent } from '../../components/shop-sidebar/shop-sidebar.component';
-import {AuthModalComponent} from "../../../../iam/presentation/components/auth-modal/auth-modal.component";
+import {AuthModalComponent, AuthMode} from "../../../../iam/presentation/components/auth-modal/auth-modal.component";
 import {HttpAuthRepository} from "../../../../iam/data/repositories/http-auth.repository";
 import {SessionStore} from "../../../../../core/state/session.store";
 
@@ -28,10 +28,10 @@ import {SessionStore} from "../../../../../core/state/session.store";
           <div class="flex items-center gap-4 text-sm">
 
             <ng-container *ngIf="!(session.state$ | async)?.token">
-              <button (click)="openAuthModal()" class="text-gray-500 hover:text-indigo-600 font-medium transition-colors">
+              <button (click)="openAuthModal('LOGIN')" class="text-gray-500 hover:text-indigo-600 font-medium transition-colors">
                 Iniciar Sesión
               </button>
-              <button (click)="openAuthModal()" class="px-4 py-2 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-transform hover:scale-105 shadow-sm font-medium">
+              <button (click)="openAuthModal('SIGNUP')" class="px-4 py-2 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-transform hover:scale-105 shadow-sm font-medium">
                 Registrarse
               </button>
             </ng-container>
@@ -45,7 +45,7 @@ import {SessionStore} from "../../../../../core/state/session.store";
                   <span>⚙️</span> Panel Admin
                 </a>
 
-                <span class="text-gray-600 hidden sm:block">Hola, {{ getRoleLabel(state.role) }}</span>
+                <span class="text-gray-600 hidden sm:block">Hola, Cliente</span>
 
                 <button (click)="logout()" class="text-red-500 hover:text-red-700 font-medium border border-red-200 px-3 py-1 rounded-full hover:bg-red-50 transition-colors text-xs">
                   Salir
@@ -58,6 +58,7 @@ import {SessionStore} from "../../../../../core/state/session.store";
       </header>
 
       <div class="flex flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 gap-8">
+
         <aside class="w-64 flex-shrink-0 hidden md:block">
           <app-shop-sidebar
             [categories]="uniqueCategories"
@@ -67,6 +68,7 @@ import {SessionStore} from "../../../../../core/state/session.store";
         </aside>
 
         <main class="flex-1">
+
           <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="relative max-w-md w-full">
               <input type="text" placeholder="Buscar productos..." [(ngModel)]="searchTerm"
@@ -81,13 +83,25 @@ import {SessionStore} from "../../../../../core/state/session.store";
             <div *ngFor="let i of [1,2,3,4,5,6]" class="bg-white h-80 rounded-xl border border-gray-200"></div>
           </div>
 
-          <div *ngIf="!loading && filteredProducts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <app-product-card *ngFor="let p of filteredProducts" [product]="p"></app-product-card>
+          <div *ngIf="!loading && filteredProducts.length === 0" class="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+            <div class="text-4xl mb-3">🔍</div>
+            <p class="text-gray-500">No encontramos productos con esos criterios.</p>
+            <button (click)="resetFilters()" class="text-indigo-600 font-bold hover:underline mt-2">Ver todo el catálogo</button>
           </div>
+
+          <div *ngIf="!loading && filteredProducts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <app-product-card
+              *ngFor="let p of filteredProducts"
+              [product]="p"
+              (addToCart)="handleAddToCart($event)">
+            </app-product-card>
+          </div>
+
         </main>
       </div>
 
-      <app-auth-modal [(isOpen)]="showAuthModal"></app-auth-modal>
+      <app-auth-modal [(isOpen)]="showAuthModal" [initialMode]="authMode"></app-auth-modal>
+
     </div>
   `,
 })
@@ -97,7 +111,10 @@ export class ShopHomeComponent implements OnInit {
   loading = true;
   searchTerm = '';
   selectedCategory = '';
+
+  // Auth State
   showAuthModal = false;
+  authMode: AuthMode = 'LOGIN';
 
   constructor(
     private catalog: HttpCatalogRepository,
@@ -140,10 +157,21 @@ export class ShopHomeComponent implements OnInit {
     this.selectedCategory = '';
   }
 
-  openAuthModal() { this.showAuthModal = true; }
-  logout() { this.authRepo.logout(); }
+  // --- AUTH ACTIONS ---
+  openAuthModal(mode: AuthMode) {
+    this.authMode = mode;
+    this.showAuthModal = true;
+  }
 
-  getRoleLabel(role: string | null): string {
-    return role === 'ROLE_ADMIN' ? 'Admin' : 'Cliente';
+  logout() {
+    this.authRepo.logout();
+  }
+
+  // --- CART ACTIONS ---
+  handleAddToCart(product: Product) {
+    // Aquí puedes implementar lógica rápida de añadir al carrito o abrir un mini-cart
+    console.log('Añadir al carrito desde Home:', product);
+    // Ejemplo visual:
+    alert(`¡${product.name} añadido al carrito!`);
   }
 }
