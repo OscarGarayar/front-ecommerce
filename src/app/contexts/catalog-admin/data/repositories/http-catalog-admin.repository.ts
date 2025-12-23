@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map } from 'rxjs';
+import {map, Observable} from 'rxjs';
 
 import { AppConfig } from '../../../../core/config/app-config';
 import { CategoryDto } from '../dto/category.dto';
@@ -162,6 +162,10 @@ export class HttpCatalogAdminRepository {
       `${this.baseUrl}/api/v1/pricing/prices/${variantId}/deactivate`,
       {}
     );
+  }
+  deleteCategory(id: number): Observable<void> {
+    const url = `${this.baseUrl}/api/v1/catalog/categories/${id}`;
+    return this.http.delete<void>(url);
   }
 }
 

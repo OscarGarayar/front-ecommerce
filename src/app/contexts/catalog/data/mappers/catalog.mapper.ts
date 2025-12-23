@@ -5,15 +5,16 @@ import { Product } from '../../domain/model/product';
 import { Category } from '../../domain/model/category';
 import { Offer } from '../../domain/model/offer';
 import { ProductCardDto } from "../dto/product-card";
+import { PageDto } from '../dto/page.dto'; // <--- Importamos el nuevo DTO
 
 export const CatalogMapper = {
-  // 1. Lógica corregida para PRODUCTOS (Detalle)
+  // 1. Mapeo de PRODUCTO COMPLETO (Usado para Detalle y ahora también para la Lista)
   toDomainProduct(dto: any): Product {
     return {
       id: dto.id,
       name: dto.name ?? 'Producto sin nombre',
       description: dto.description ?? null,
-      // ✅ FIX 1: Mapear el precio base del producto
+      // Si el back no envía precio en este endpoint, se asume 0
       price: dto.price ?? 0,
       status: dto.status ?? 'DRAFT',
       category: dto.category ?? 'General',
@@ -33,51 +34,32 @@ export const CatalogMapper = {
           id: v.id,
           sku: v.sku,
           status: v.status,
-          // ✅ FIX 2: ¡AQUÍ ESTÁ LA CLAVE! Mapear los atributos
           attributes: v.attributes ?? {},
-          price: v.price, // Por si la variante trae precio propio en este DTO
+          price: v.price,
           images: v.images ?? []
         }))
         : [],
     };
   },
 
-  // 2. Restauramos CATEGORÍAS
+  // 2. NUEVO: Mapeo de PÁGINA COMPLETA
+  toDomainPage(pageDto: PageDto<any>): Product[] {
+    if (!pageDto || !Array.isArray(pageDto.content)) {
+      return [];
+    }
+    // Reutilizamos toDomainProduct porque la lista ahora trae toda la info
+    return pageDto.content.map(item => CatalogMapper.toDomainProduct(item));
+  },
+
+  // ... (El resto de métodos como toDomainCategory, toDomainOffer se mantienen igual)
   toDomainCategory(dto: CategoryDto): Category {
     return { ...dto };
   },
 
-  // 3. Restauramos OFERTAS
   toDomainOffer(dto: OfferDto): Offer {
     return { ...dto };
   },
 
-  // 4. Mapeo desde Cards (Listado)
-  toDomainProductFromCard(dto: ProductCardDto): Product {
-    // Intentamos mapear todas las imágenes si vienen en el DTO, si no, usamos la primaria
-    let images: any[] = [];
-
-    // SI TU DTO TIENE UN CAMPO 'images' (array), úsalo:
-    if ((dto as any).images && Array.isArray((dto as any).images)) {
-      images = (dto as any).images.map((img: any) => ({
-        url: img.url,
-        type: img.type
-      }));
-    }
-    // Si no, fallback a la primaria
-    else if (dto.primaryImageUrl) {
-      images = [{ url: dto.primaryImageUrl, type: 'PRIMARY' }];
-    }
-
-    return {
-      id: dto.id,
-      name: dto.name,
-      description: dto.description ?? '',
-      status: 'PUBLISHED',
-      category: 'General',
-      price: dto.minimumPrice,
-      images: images, // <--- Pasamos el array completo
-      variants: []
-    };
-  }
+  // (Opcional) Puedes mantener toDomainProductFromCard si algún otro endpoint viejo lo usa,
+  // pero el nuevo endpoint usa toDomainProduct.
 };
